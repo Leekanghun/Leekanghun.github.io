@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>리모트몬스터 단순 시청 앱</title>
+
+  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+</head>
+<body>
+  <div id="wingleft"></div>
+  <div id="mymain">
+    <h2>시청</h2>
+    <video id="remoteVideo" autoplay muted></video>
+    <br>
+    <button id="mystart" class="btn btn-main">Start</button>
+    <button id="mystop" class="btn btn-main" disabled>Stop</button>
+  </div>
+  <div id="wingright"></div>
+
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@remotemonster/sdk/remon.min.js"></script>
+  <script>
+  let remon;
+  const config = {
+    credential: {
+      serviceId: '2379d15b-a592-48ff-8711-b53ef7fddf64',
+      key: '6618114235ce53ac2b9a522deaf93a589b96da925b28450a142fadc1ae8a3d25'
+    },
+    view: {
+      remote: '#remoteVideo'
+    }
+  };
+  const listener = {
+    onCreate(chid) { console.log(`EVENT FIRED: onCreate: ${chid}`); },
+    onJoin(chid) { console.log(`EVENT FIRED: onJoin: ${chid}`); $('#mystart').prop( "disabled", true ); $('#mystop').prop( "disabled", false ); },
+    onClose() { console.log('EVENT FIRED: onClose'); $('#mystart').prop( "disabled", false ); $('#mystop').prop( "disabled", true ); },
+    onError(error) { console.log(`EVENT FIRED: onError: ${error}`); },
+    onStat(result) { console.log(`EVENT FIRED: onStat: ${result}`); }
+  };
+  $('#mystop').click(function(){
+    remon.close();
+  });
+  $('#mystart').click(function(){
+    remon.joinCast("my-first-channel");
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>리모트몬스터 단순 통화 앱</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="style.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.slim.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+
+	리스트<br>
+	<div class="row" style="width:250px; border:solid 1px #ff0000; height:50px; " id="otherVideos"></div>
+
+	<div style="width:300px; height:300px;">
+	내화면<br>
+	</div>
+
+	시작<br><br><br><br><br><br><br>
+	<input id="selectedRoom" class="form-control text-center" type="text" placeholder="room name" autofocus value="dooroonory_6368"/>
+	<a id="enterBtn" href="#" class="btn btn-primary btn-user text-center">시작</a>
+
+
+
+
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@remotemonster/sdk/remon.min.js"></script>
+
+	<script>
+		const enterBtn = document.querySelector("#enterBtn");
+		const otherVideos = document.getElementById('otherVideos');
+		const selectedRoom = document.getElementById("selectedRoom");
+		let isConnected = false;
+		let remon;
+		let roomName = '';
+		let currentRoom = [];
+		const rooms = [];
+		const key = "6618114235ce53ac2b9a522deaf93a589b96da925b28450a142fadc1ae8a3d25";
+		const serviceId = "2379d15b-a592-48ff-8711-b53ef7fddf64";
+		// please register your own service key from remotemonster site.
+		let config = {
+			credential: {
+				key: key,
+				serviceId: serviceId,
+				wsurl: "wss://signal.remotemonster.com/ws",
+				resturl: "https://signal.remotemonster.com/rest",
+			},
+			view: {
+				//remote: "#remoteVideo",
+				//local: "#myVideo"
+			},
+			media: {
+				video: {
+					width: {
+						min: 320,
+						max: 640
+					},
+					height: {
+						min: 240,
+						max: 480
+					},
+					frameRate: {
+						min: 8,
+						max: 30
+					},
+					maxBandwidth: 500,
+					codec: 'H264'
+				},
+				audio: true
+			}
+		};
+		const videoAttrs = {
+			class: "remote-video center w-320 h-240",
+			autoplay: true,
+			muted: true,
+			controls: true,
+			playsinline: true,
+			style: "z-index:1;background: rgba(0, 0, 0, 0.5); width: 300px;"
+		}
+
+		const listener = {
+			onConnect(chid) {
+				console.log(`remon.listener.onConnect ${chid} at listener`);
+			},
+			onComplete() {
+				console.log(`remon.listener.onComplete: ${remon.getChannelId()} `);
+				currentRoom[remon.getChannelId()] = true;
+			},
+			onDisconnectChannel() {
+				// is called when other peer hang up.
+				remon.close();
+				isConnected = false;
+			},
+			onClose() {
+				// is called when remon.close() method is called.
+				console.log(`remon.listener.onClose: ${remon.getChannelId()}`);
+			},
+			onError(error) {
+				console.log(`remon.listener.onError: ${remon.getChannelId()} ${error}`);
+			},
+			onStat(result) {
+				// console.log(`EVENT FIRED: onStat:  ${JSON.stringify(result)}`);
+			},
+			onRoomEvent(result) {
+				//join
+				switch (result.event) {
+					case 'join':
+						if (!currentRoom[result.channel.id]) {
+							currentRoom[result.channel.id] = true;
+							let newVideo = document.createElement('video')
+							videoAttrs.id = result.channel.id.replace(":", "-");
+							Object.keys(videoAttrs).forEach(key => newVideo.setAttribute(key, videoAttrs[key]))
+							config.view.remote = `#${newVideo.id}`
+							newVideo.remon = new Remon({
+								config
+							})
+							otherVideos.appendChild(newVideo)
+							newVideo.remon.joinCast(newVideo.id.replace("-", ":"))
+						}
+						break;
+					case 'leave':
+						if (currentRoom[result.channel.id] && result.channel.id !== remon.getChannelId()) {
+							let video = document.getElementById(result.channel.id.replace(":", "-"));
+							otherVideos.removeChild(video);
+							delete currentRoom[result.channel.id]
+						}
+						break;
+				}
+				console.log(`EVENT FIRED: onRoomEvent channel Id : ${remon.getChannelId()}`)
+				console.log(`EVENT FIRED: onRoomEvent: ${JSON.stringify(result)}`)
+			}
+		};
+
+		createDummyRemonForSearchLoop();
+
+		async function start() {
+			if (isConnected) {
+				isConnected = false;
+				document.querySelector('#enterBtn').innerHTML = "Enter";
+				Object.keys(currentRoom).forEach(function (id) {
+					if (id !== remon.getChannelId()) {
+						let video = document.getElementById(id.replace(":", "-"));
+						if (video && video.remon) {
+							otherVideos.removeChild(video);
+						}
+					}
+					delete currentRoom[id];
+				})
+				remon.close()
+			} else {
+				roomName = selectedRoom.value ? selectedRoom.value : 'remon'; 
+				isConnected = true;
+				document.querySelector('#enterBtn').innerHTML = "leave";
+
+				await remon.createRoom(roomName)
+				let participants = await remon.fetchRooms(roomName);
+
+				participants.forEach(async function (participant) {
+					if (!currentRoom[participant.id]) {
+						currentRoom[participant.id] = true;
+						let newVideo = document.createElement('video');
+						videoAttrs.id = participant.id.replace(":", "-");
+						Object.keys(videoAttrs).forEach(key => newVideo.setAttribute(key, videoAttrs[key]))
+						config.view.remote = `#${newVideo.id}`
+						newVideo.remon = new Remon({
+							config
+						})
+						otherVideos.appendChild(newVideo)
+						await newVideo.remon.joinCast(newVideo.id.replace("-", ":"));
+					}
+				})
+			}
+		}
+
+
+
+		function createDummyRemonForSearchLoop() {
+			if (remon) remon.close();
+			remon = new Remon({
+				config,
+				listener
+			});
+		}
+
+
+		enterBtn.addEventListener("click",
+			evt => {
+				start();
+				evt.preventDefault();
+			},
+			false
+		);
+	</script>
+
+
+</body>
+
+</html>

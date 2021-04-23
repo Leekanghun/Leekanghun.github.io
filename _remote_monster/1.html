@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>리모트몬스터 단순 통화 앱</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <main>
+    <div class="container">
+      <div class="row">
+        <div id="you" class="col-12 col-sm-6 col-md-6">
+          <h2>상대방</h2>
+          <video id="remoteVideo" class="remoteVideo" autoplay playsinline></video>
+        </div>
+        <div id="me" class="col-12 col-sm-6 col-md-6">
+          <h2>나</h2>
+          <video id="localVideo" class="localVideo" muted autoplay playsinline></video>
+        </div>
+      </div>
+      <div class="row">
+        <div id="controlLeft" class="col-6 col-sm-6 col-md-6">
+          <button id="startCall">시작</button>
+        </div>
+        <div id="controlRight" class="col-6 col-sm-6 col-md-6">
+          <button id="stopCall">종료</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12 col-sm-12 col-md-12">
+          <div id="channelId"></div>
+          <div id="channelState"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <p>리모트몬스터 제공</p>
+  </footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@remotemonster/sdk/remon.min.js"></script>
+  <script>
+    let remonCall;
+	var remonRoom=[];
+	var a;
+
+    const config = {
+      credential: {
+        serviceId: '2379d15b-a592-48ff-8711-b53ef7fddf64',
+        key: '6618114235ce53ac2b9a522deaf93a589b96da925b28450a142fadc1ae8a3d25'
+      },
+      view: {
+       remote: '#remoteVideo',
+        local: '#localVideo'
+      }
+    }
+
+    const listener = {
+      onConnect(chid) {
+        $('#channelId').text(chid);
+        $('#channelState').text("대기 중");
+		console.log(1111111);
+		console.log(chid);
+		a = chid;
+        console.log(`onConnect: ${chid}`);
+      },
+      onComplete() {
+console.log(222);
+console.log(remonCall.getChannelId());
+        $('#channelState').text("통화 중");
+		remonRoom[remonCall.getChannelId()] = true;
+        console.log("remon.listener.onComplete: "+ remonCall.getChannelId());
+        console.log(`onComplete`);
+      },
+      onClose() {
+        $('#channelState').text("통화 종료");
+        console.log(`onClose`);
+        remonCall.close();
+        if($('#localVideo')[0].srcObject){ $('#localVideo')[0].srcObject=undefined; }
+        remonCall = new Remon({config: config, listener: listener});
+      },
+			onRoomEvent(result) {
+				//join
+
+				console.log('---1111---')
+				console.log(result.event)
+				console.log(result.channel.id)
+
+//				switch (result.event) {
+//					case 'join':
+//						if (!remonRoom[result.channel.id]) {
+//							remonRoom[result.channel.id] = true;
+//							let newVideo = document.createElement('video')
+//							videoAttrs.id = result.channel.id.replace(":", "-");
+//							Object.keys(videoAttrs).forEach(key => newVideo.setAttribute(key, videoAttrs[key]))
+//							config.view.remote = `#${newVideo.id}`
+//							newVideo.remon = new Remon({
+//								config
+//							})
+//							otherVideos.appendChild(newVideo)
+//							newVideo.remon.joinCast(newVideo.id.replace("-", ":"))
+//						}
+//						break;
+//					case 'leave':
+//						if (remonRoom[result.channel.id] && result.channel.id !== remon.getChannelId()) {
+//							let video = document.getElementById(result.channel.id.replace(":", "-"));
+//							otherVideos.removeChild(video);
+//							delete remonRoom[result.channel.id]
+//						}
+//						break;
+//				}
+//				console.log(`EVENT FIRED: onRoomEvent channel Id : ${remon.getChannelId()}`)
+//				console.log(`EVENT FIRED: onRoomEvent: ${JSON.stringify(result)}`)
+			}
+
+    }
+
+
+
+
+async function start() 
+{
+    remonCall = new Remon({config, listener});
+	await remonCall.createRoom("remon1")
+
+	 participants = await remonCall.fetchRooms("remon1");
+
+	
+	 console.log(participants)
+	participants.forEach( function (participant) {
+		console.log(participant.id)
+	})
+//				participants.forEach(async function (participant) {
+//					console.log(participant)
+//					if (!remonRoom[participant.id]) {
+//						remonRoom[participant.id] = true;
+//						let newVideo = document.createElement('video');
+//						console.log(111);
+//						console.log(participant.id);
+//						videoAttrs.id = participant.id.replace(":", "-");
+//						Object.keys(videoAttrs).forEach(key => newVideo.setAttribute(key, videoAttrs[key]))
+//						config.view.remote = `#${newVideo.id}`
+//						newVideo.remon = new Remon({
+//							config
+//						})
+//						otherVideos.appendChild(newVideo)
+//						await newVideo.remon.joinCast(newVideo.id.replace("-", ":"));
+//					}
+//				})
+}
+
+
+
+    $('#startCall').click(function() {
+		start() ;
+      // connectCall의 인자는 통화채널의 ID입니다. 실제 서비스에서는 동일한 통화채널의 ID가 아닌, 고유하고 예측이 어려운 ID를 사용해야합니다.
+//      remonCall.connectCall('my-first-channel');
+    });
+
+    // "종료" 버튼을 클릭하면 통화채널에서 나갑니다.
+    $('#stopCall').click(function() {
+//		alert(a)
+      remonCall.close();
+    });
+  </script>
+</body>
+
+</html>

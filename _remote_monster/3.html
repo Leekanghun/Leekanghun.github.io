@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@remotemonster/sdk/remon.min.js"></script>
+  <script>
+    const config = {
+      credential: {
+		  serviceId: '2379d15b-a592-48ff-8711-b53ef7fddf64',
+		  key: '6618114235ce53ac2b9a522deaf93a589b96da925b28450a142fadc1ae8a3d25'
+      }
+    }
+
+	const caller = new Remon({config: config});
+  </script>
+</body>
+
+</html>
