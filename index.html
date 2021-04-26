@@ -292,7 +292,7 @@
 
                 await remon.createRoom(roomName)
                 let participants = await remon.fetchRooms(roomName);
-
+                debugger;
                 participants.forEach(async function(participant){
                   if(!currentRoom[participant.id]){
                           currentRoom[participant.id] = true;
