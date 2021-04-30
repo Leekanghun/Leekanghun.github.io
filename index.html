@@ -202,7 +202,7 @@
                     height: { min: 480, max: 480 },
                     frameRate: { min: 8, max: 30 },
                     maxBandwidth: 1024,
-                    codec: 'H264'
+                    codec: 'VP9'
                   },
                   audio: true
               }
@@ -246,17 +246,17 @@
                         if(!currentRoom[result.channel.id]){
                           currentRoom[result.channel.id] = true;
                             let newVideo = document.createElement('video')
-                            videoAttrs.id = result.channel.id;
+                            videoAttrs.id = result.channel.id.replace(":","-");
                             Object.keys(videoAttrs).forEach(key => newVideo.setAttribute(key, videoAttrs[key]))
                             config.view.remote = `#${newVideo.id}`
                             newVideo.remon = new Remon({ config })
                             otherVideos.appendChild(newVideo)
-                            newVideo.remon.joinCast(newVideo.id)
+                            newVideo.remon.joinCast(newVideo.id.replace("-",":"))
                         }
                       break;
                     case 'leave':
                         if(currentRoom[result.channel.id] && result.channel.id !== remon.getChannelId()){
-                          let video = document.getElementById(result.channel.id);
+                          let video = document.getElementById(result.channel.id.replace(":","-"));
                           otherVideos.removeChild(video);
                           delete currentRoom[result.channel.id]
                         }
@@ -275,7 +275,7 @@
                 document.querySelector('#enterBtn').innerHTML = "Enter";
                 Object.keys(currentRoom).forEach(function(id){
                   if( id !== remon.getChannelId()){
-                    let video = document.getElementById(id);
+                    let video = document.getElementById(id.replace(":","-"));
                     if(video && video.remon){
                       otherVideos.removeChild(video);
                     }
@@ -297,12 +297,12 @@
                   if(!currentRoom[participant.id]){
                           currentRoom[participant.id] = true;
                             let newVideo = document.createElement('video');
-                            videoAttrs.id =  participant.id
+                            videoAttrs.id =  participant.id.replace(":","-");
                             Object.keys(videoAttrs).forEach(key => newVideo.setAttribute(key, videoAttrs[key]))
                             config.view.remote = `#${newVideo.id}`
                             newVideo.remon = new Remon({ config })
                             otherVideos.appendChild(newVideo)
-                            await newVideo.remon.joinCast(newVideo.id);
+                            await newVideo.remon.joinCast(newVideo.id.replace("-",":"));
                         }
                 })
               }
